@@ -3,6 +3,7 @@ from resume_parser import extract_text_from_pdf
 from pydantic import BaseModel      
 from matcher import get_similarity_score
 from llm_reasoner import get_llm_feedback
+from db import insert_job
 
 app = FastAPI()
 
@@ -32,3 +33,13 @@ def match_resume(request: MatchRequest):
         "similarity": similarity,
         **llm_data  # merges fields like match_strength, missing_skills, etc.
     }
+class JobIn(BaseModel):
+    title: str
+    company: str = None
+    location: str = None
+    description: str
+
+@app.post("/add_job")
+def add_job(job: JobIn):
+    insert_job(job.title, job.company, job.location, job.description)
+    return {"status": "Job added successfully"}
