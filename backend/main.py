@@ -1,9 +1,9 @@
-from fastapi import FastAPI,File,UploadFile, HTTPException
+from fastapi import FastAPI,File,UploadFile, HTTPException, Body
 from resume_parser import extract_text_from_pdf
 from pydantic import BaseModel      
 from matcher import get_similarity_score
 from llm_reasoner import get_llm_feedback
-from db import insert_job, fetch_all_jobs
+from db import insert_job, fetch_all_jobs, get_job_by_id
 
 app = FastAPI()
 
@@ -70,3 +70,17 @@ async def match_jobs(resume: UploadFile = File(...), threshold: float = 0.3):
 
     # Step 4: Return matched jobs
     return {"matches": sorted(matched_jobs, key=lambda x: x["similarity"], reverse=True)}
+
+@app.post("/llm-feedback/")
+async def llm_feedback(data: dict = Body(...)):
+    resume_text = data["resume_text"]
+    job_id = data["job_id"]
+    
+    job_description = get_job_by_id(job_id)
+    
+    if not job_description:
+        return{"error":"Job not found"}
+    
+    feedback = get_llm_feedback(resume_text,job_description)
+    
+    return feedback

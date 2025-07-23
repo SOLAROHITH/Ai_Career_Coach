@@ -39,3 +39,15 @@ def fetch_all_jobs():
     cur.close()
     conn.close()
     return jobs
+
+def get_job_by_id(job_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT description from jobs WHERE id=%s",(job_id))
+    result = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return result[0] if result else none
+    
+    
