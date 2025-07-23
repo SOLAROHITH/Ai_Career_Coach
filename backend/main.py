@@ -3,7 +3,7 @@ from resume_parser import extract_text_from_pdf
 from pydantic import BaseModel      
 from matcher import get_similarity_score
 from llm_reasoner import get_llm_feedback
-from db import insert_job
+from db import insert_job, fetch_all_jobs
 
 app = FastAPI()
 
@@ -43,3 +43,30 @@ class JobIn(BaseModel):
 def add_job(job: JobIn):
     insert_job(job.title, job.company, job.location, job.description)
     return {"status": "Job added successfully"}
+
+@app.post("/match-jobs/")
+async def match_jobs(resume: UploadFile = File(...), threshold: float = 0.3):
+    # Step 1: Extract resume text
+    resume_text = await resume.read()
+    resume_text = extract_text_from_pdf(resume_text)
+
+    # Step 2: Fetch jobs from DB
+    jobs = fetch_all_jobs()
+
+    # Step 3: Match each job
+    matched_jobs = []
+    for job in jobs:
+        job_id, title, company, location, description = job
+        score = get_similarity_score(resume_text, description)
+        if score >= threshold:
+            matched_jobs.append({
+                "job_id": job_id,
+                "title": title,
+                "company": company,
+                "location": location,
+                "description": description,
+                "similarity": score
+            })
+
+    # Step 4: Return matched jobs
+    return {"matches": sorted(matched_jobs, key=lambda x: x["similarity"], reverse=True)}

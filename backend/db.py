@@ -29,3 +29,13 @@ def insert_job(title, company, location, description):
     conn.commit()
     cur.close()
     conn.close()
+
+def fetch_all_jobs():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(""" SELECT id,title,company,location,description from jobs""")
+    jobs = cur.fetchall()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jobs
